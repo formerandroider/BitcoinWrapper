@@ -6,18 +6,18 @@ Add configuration values to the config.ini.php.
 
 Explanation:
 
-## Core
-[*] mode
+### Core
+- mode
 The mode. Set to 0 in production. Any value above 0 will call the methods to display errors.
-[*] title
+- title
 The title to use on each page.
 
-## BitCoin
-[*] host
+### BitCoin
+- host
 BitCoin-RPC host.
-[*] rpcuser
+- rpcuser
 BitCoin-RPC Username
-[*] rpcpass
+- rpcpass
 BitCoin-RPC password
-[*] donateaddress
+- donateaddress
 A bitcoin address used for the donate widget on the index page
