@@ -9,7 +9,7 @@
 class BitCoin
 {
 	/**
-	 * Connect using SSL.
+	 * Connect using secure http.
 	 */
 	const PROTOCOL_SSL = "https";
 
@@ -23,11 +23,12 @@ class BitCoin
 	protected $_host;
 	protected $_port;
 
-	protected $_protocol = 'http';
+	protected $_protocol = self::PROTOCOL_HTTP;
 	protected $_cert = null;
 
 	protected $_status;
 	protected $_error;
+	protected $_errorCode;
 	protected $_response;
 	protected $_rawResponse;
 
@@ -67,6 +68,7 @@ class BitCoin
 		{
 			case self::PROTOCOL_SSL:
 				$this->_protocol = "https";
+				trigger_error('Use of JSON-RPC over SSL is strongly discouraged!', E_USER_WARNING);
 				break;
 			case self::PROTOCOL_HTTP:
 				$this->_protocol = "http";
@@ -93,7 +95,7 @@ class BitCoin
 		}
 
 		$this->_cert = realpath($filePath);
-		$this->_protocol = "https";
+		$this->setProtocol(self::PROTOCOL_SSL);
 	}
 
 	/**
@@ -107,6 +109,11 @@ class BitCoin
 	 */
 	public function callMethod($methodName, array $parameters = array())
 	{
+		if ($this->_protocol == self::PROTOCOL_SSL)
+		{
+			trigger_error('Use of JSON-RPC over SSL is strongly discouraged!', E_USER_WARNING);
+		}
+
 		$this->_status = null;
 		$this->_response = null;
 		$this->_rawResponse = null;

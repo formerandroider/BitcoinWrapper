@@ -1,9 +1,10 @@
 <?php
 
-require_once('functions.inc.php');
+require_once('FrontEnd.php');
 require_once('BitCoin.php');
+require_once('Utils.php');
 
-$config = parse_ini_file('config.ini.php', true);
+$config = parse_ini_file('config.ini.php', true, PHP_VERSION_ID >= 50601 ? INI_SCANNER_TYPED : INI_SCANNER_NORMAL);
 
 if ($config['Core']['mode'] > 0)
 {
