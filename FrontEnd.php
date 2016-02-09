@@ -27,7 +27,9 @@ class FrontEnd
 			{
 				list($body, $js, $head) = $this->{$method}();
 
-				$this->_printOutput($body, $js, $head);
+				$js .= $this->_config['FrontEnd']['extrajs'];
+
+				$this->_printOutput($body, $js, $head, $action);
 			}
 			else
 			{
@@ -51,7 +53,7 @@ class FrontEnd
 					<script src=\"js/cw/coin.js\"></script>
 					<script>
 						CoinWidgetCom.go({
-							wallet_address: \"{$this->_config['BitCoin']['donateaddress']}\"
+							wallet_address: \"{$this->_config['FrontEnd']['donateaddress']}\"
 							, currency: \"bitcoin\"
 							, counter: \"amount\"
 							, alignment: \"bc\"
@@ -63,7 +65,7 @@ class FrontEnd
 						});
 					</script>
 
-					<noscript>You don't have javascript enabled, so you can't see the fancy button. You can still send me some BTC though - send them to {$this->_config['BitCoin']['donateaddress']}.</noscript>
+					<noscript>You don't have javascript enabled, so you can't see the fancy button. You can still send me some BTC though - send them to {$this->_config['FrontEnd']['donateaddress']}.</noscript>
 
 					<p><a href=\"{$this->_getUrl('info')}\">View Info</a></p>
 					<p><a href=\"{$this->_getUrl('connections')}\">View Connections</a></p>
@@ -83,6 +85,8 @@ class FrontEnd
 		{
 			if (!$info = $class->callMethod('getinfo'))
 			{
+				die($class->getError());
+
 				$this->_error();
 			}
 		} catch (Exception $e)
@@ -106,12 +110,16 @@ class FrontEnd
 			}
 		}
 
-		return $body;
+		return array(
+			$body,
+			false,
+			false
+		);
 	}
 
 	protected function _getAction()
 	{
-		$action = $_GET['action'] ?: 'index';
+		$action = isset($_GET['action']) ? $_GET['action'] : 'index';
 
 		if (preg_match('#^/?([A-Z0-9\/]+)/?$#i', $action, $matches))
 		{
@@ -151,11 +159,9 @@ class FrontEnd
 		if ($this->_config['FrontEnd']['resolvehostname'])
 		{
 			$body = <<<TABLE
-<table>
+<table id="connections">
 	<tr>
 		<th>Host</th>
-	</tr>
-	<tr>
 		<th>IP</th>
 	</tr>
 TABLE;
@@ -163,7 +169,7 @@ TABLE;
 		else
 		{
 			$body = <<<TABLE
-<table>
+<table id="connections">
 	<tr>
 		<th>IP</th>
 	</tr>
@@ -174,14 +180,23 @@ TABLE;
 		{
 			if ($this->_config['FrontEnd']['resolvehostname'])
 			{
-				$hostname = Utils::gethostbyaddr_timeout(reset(explode(':', $connection['addr'])),
-					$this->_config['FrontEnd']['resolver'], $this->_config['FrontEnd']['resolvetimeout']);
+				if (substr_count($connection['addr'], ':') > 1)
+				{
+					$parts = explode(']', $connection['addr']);
+					$parts[0] = substr($parts[0], '1');
+
+					$parts[1] = str_replace(':', '', $parts[1]);
+				}
+				else
+				{
+					$parts = explode(':', $connection['addr']);
+				}
+
+				$hostname = gethostbyaddr($parts[0]);
 
 				$body .= <<<CONN
 	<tr>
 		<td>{$hostname}</td>
-	</tr>
-	<tr>
 		<td>{$connection['addr']}</td>
 	</tr>
 CONN;
@@ -198,7 +213,11 @@ CONN;
 
 		$body .= "</table>";
 
-		return $body;
+		return array(
+			$body,
+			false,
+			false
+		);
 	}
 
 	protected function _getUrl($action)
@@ -250,9 +269,9 @@ HTML;
 		header('Status: 404 Not Found');
 	}
 
-	protected function _printOutput($body, $js, $head)
+	protected function _printOutput($body, $js, $head, $action)
 	{
-		print "<html><head><title>{$this->_config['FrontEnd']['title']} - " . ucfirst($_GET['action']) . "</title><script>$js</script>$head</head>";
+		print "<html><head><title>{$this->_config['FrontEnd']['title']} - " . ucfirst($action) . "</title>$js$head<link rel=\"stylesheet\" href=\"bitcoin.css\" /></head>";
 		print "<body>$body</body></html>";
 	}
 
