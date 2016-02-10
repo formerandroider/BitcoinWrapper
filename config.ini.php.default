@@ -6,17 +6,17 @@ die;
 
 [Core]
 ; Modes: 0=production 1=testing
-mode = 2
+mode = 0
 
 [BitCoin]
-host = occult.xf-liam.com ; Bitcoin host, IPv6 allowed if supported by system.
+host = 127.0.0.1 ; Bitcoin host, IPv6 allowed if supported by system.
 rpcuser = bitcoinrpc; Bitcoin rpc user, as defined in bitcoin.conf
-rpcpassword = 88FF6dUNtmVfxzX4xJV3sEsvMYaRW4DpZ19MWhvun42z; Bitcoin rpc password, as defined in bitcoin.conf
+rpcpassword = ; Bitcoin rpc password, as defined in bitcoin.conf
 rpcssl = 0 ; Boolean value. If true, connects to RPC using SSL. (This is discouraged and will trigger a warning if enabled.)
 
 [FrontEnd]
-title = Murder Bitcoin Node
-donateaddress = 1GezsstKExB7DWKhhiPtxXgWA7BXRSfsGr
+title =
+donateaddress =
 friendlyurl = 0
-resolvehostname = 1
+resolvehostname = 0
 extrajs = ; Any extra header js, such as tracking code

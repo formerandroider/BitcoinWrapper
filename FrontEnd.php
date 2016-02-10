@@ -44,11 +44,17 @@ class FrontEnd
 
 	public function actionIndex()
 	{
+		$bitcoin = $this->_getBitcoin();
+
 		return array(
 			"<div style=\"text-align: center;\">
-					<p>This server is used only as a testbed, and as a bitcoin node.</p>
+					<p>This server is used pretty much solely as a bitcoin node.</p>
 
-					<p>Please feel free to donate bitcoins as you see fit :)</p>
+					<p>Please feel free to donate bitcoins as you see fit, to help keep this individual node running... :)</p>
+
+					<div class=\"inlineInfo\">
+						<p><span>Balance: <a href=\"{$this->_getUrl('transactions')}\">{$bitcoin->getbalance()}</a></span> <span>Connections: <a href='{$this->_getUrl('connections')}'>{$bitcoin->getConnectionCount()}</a></span></p>
+					</div>
 
 					<script src=\"js/cw/coin.js\"></script>
 					<script>
@@ -65,11 +71,91 @@ class FrontEnd
 						});
 					</script>
 
-					<noscript>You don't have javascript enabled, so you can't see the fancy button. You can still send me some BTC though - send them to {$this->_config['FrontEnd']['donateaddress']}.</noscript>
-
-					<p><a href=\"{$this->_getUrl('info')}\">View Info</a></p>
-					<p><a href=\"{$this->_getUrl('connections')}\">View Connections</a></p>
+					<noscript>You don't have javascript enabled, so you can't see the fancy button. You can still send me some BTC though - send them to {$this->_config['FrontEnd']['donateaddress']} (if you want).</noscript>
 				</div>",
+			false,
+			false
+		);
+	}
+
+	public function actionAddNode()
+	{
+		$this->_error();
+
+		$this->_assertMethod('POST');
+
+		if (!filter_var($_POST['node_ip'], FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE))
+		{
+			$this->_error('Invalid IP', 'The entered node IP could not be validated!');
+		}
+
+		$this->_getBitcoin()->addNode($_POST['node_ip'], 'onetry');
+
+		header('Location: ' . $this->_getUrl(''));
+
+		return array(
+			false,
+			false,
+			false
+		);
+	}
+
+	public function actionTransactions()
+	{
+		$bitcoin = $this->_getBitcoin();
+
+		$txs = $bitcoin->listtransactions("", 50);
+
+		uasort($txs, function (array $a, array $b)
+		{
+			$sortRow = isset($_GET['sort']) ? $_GET['sort'] : 'time';
+
+			if ($sortRow != 'time' && $sortRow != 'amount')
+			{
+				$sortRow = 'time';
+			}
+
+			return $b[$sortRow] <=> $a[$sortRow];
+		});
+
+		$body = <<<BODY
+
+		<table>
+			<tr>
+				<th>TX ID (Blockchain Link)</th>
+				<th>Address</th>
+				<th>Amount</th>
+				<th>Date/Time (D/M/Y, London Time)</th>
+			</tr>
+BODY;
+
+		foreach ($txs as $tx)
+		{
+			if ($tx['category'] != 'send' && $tx['category'] != 'receive')
+			{
+				continue;
+			}
+
+			$date = new DateTime();
+			$date->setTimezone(new DateTimeZone('Europe/London'));
+			$date->setTimestamp($tx['time']);
+
+			$body .= <<<TX
+			<tr>
+				<td><a href="https://blockchain.info/tx/{$tx['txid']}">Click Me</a></td>
+				<td>{$tx['address']}</td>
+				<td>{$tx['amount']}</td>
+				<td>{$date->format('d/m/Y g:i A')}</td>
+			</tr>
+TX;
+		}
+
+		$body .= <<<ENDB
+		</table>
+ENDB;
+
+		return array(
+			$body,
 			false,
 			false
 		);
@@ -85,8 +171,6 @@ class FrontEnd
 		{
 			if (!$info = $class->callMethod('getinfo'))
 			{
-				die($class->getError());
-
 				$this->_error();
 			}
 		} catch (Exception $e)
@@ -222,6 +306,11 @@ CONN;
 
 	protected function _getUrl($action)
 	{
+		if ($action == '')
+		{
+			return '/';
+		}
+
 		if ($this->_config['FrontEnd']['friendlyurl'])
 		{
 			return $action;
@@ -282,5 +371,13 @@ HTML;
 		$bitcoin->setProtocol($this->_config['BitCoin']['rpcssl'] ? BitCoin::PROTOCOL_SSL : BitCoin::PROTOCOL_HTTP);
 
 		return $bitcoin;
+	}
+
+	private function _assertMethod($string)
+	{
+		if ($_SERVER['REQUEST_METHOD'] != $string)
+		{
+			$this->_error('Invalid Method', 'This action is not available via the request method used.', 405);
+		}
 	}
 }

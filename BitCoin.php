@@ -109,11 +109,6 @@ class BitCoin
 	 */
 	public function callMethod($methodName, array $parameters = array())
 	{
-		if ($this->_protocol == self::PROTOCOL_SSL)
-		{
-			trigger_error('Use of JSON-RPC over SSL is strongly discouraged!', E_USER_WARNING);
-		}
-
 		$this->_status = null;
 		$this->_response = null;
 		$this->_rawResponse = null;
@@ -243,7 +238,7 @@ class BitCoin
 	 */
 	function __call($name, $arguments)
 	{
-		return $this->callMethod($name, $arguments);
+		return $this->callMethod(strtolower($name), $arguments);
 	}
 }
 
